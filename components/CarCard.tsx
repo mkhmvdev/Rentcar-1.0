@@ -1,0 +1,12 @@
+"use client";
+import Image from "next/image"; import Link from "next/link";
+import { Gauge, Heart, Users } from "lucide-react"; import {useState} from "react";
+import type {Car} from "@/data/cars";
+export function CarCard({car}:{car:Car}){const[liked,setLiked]=useState(()=>{if(typeof window==="undefined") return false;const saved=JSON.parse(localStorage.getItem("favorite-cars")||"[]") as number[];return saved.includes(car.id)});
+const toggle=()=>{const saved=JSON.parse(localStorage.getItem("favorite-cars")||"[]") as number[];const next=saved.includes(car.id)?saved.filter(id=>id!==car.id):[...saved,car.id];localStorage.setItem("favorite-cars",JSON.stringify(next));setLiked(next.includes(car.id))};
+return <article className="card-shadow rounded-2xl bg-white p-5 transition duration-300 hover:-translate-y-1">
+<div className="flex items-start justify-between"><div><h3 className="font-bold">{car.name}</h3><p className="mt-1 text-xs font-semibold text-[#90A3BF]">{car.type} • ★ {car.rating}</p></div><button type="button" onClick={toggle} aria-label={liked?"Sevimlilardan olish":"Sevimlilarga qo‘shish"} aria-pressed={liked} className="text-[#90A3BF]"><Heart size={20} fill={liked?"#3563E9":"none"} color={liked?"#3563E9":"currentColor"}/></button></div>
+{(car.newArrival||car.discount||!car.available)&&<div className="mt-3 flex gap-2">{car.newArrival&&<span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Yangi</span>}{car.discount&&<span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-bold text-orange-700">-{car.discount}%</span>}{!car.available&&<span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">Band</span>}</div>}
+<Link href={`/vehicles/${car.id}`} className="relative my-6 block h-36"><Image src={car.image} alt={`${car.name} avtomobili`} fill sizes="(max-width:768px) 100vw, 300px" className="object-cover"/></Link>
+<div className="flex items-center justify-between text-xs text-[#90A3BF]"><span className="flex items-center gap-1"><Gauge size={16}/>{car.fuel}</span><span>{car.transmission}</span><span className="flex items-center gap-1"><Users size={16}/>{car.seats} kishi</span></div>
+<div className="mt-5 flex items-center justify-between"><p><b className="text-xl">${car.price}.00</b><span className="text-xs text-[#90A3BF]"> /kun</span></p><Link href={`/vehicles/${car.id}`} className="rounded-md bg-[#3563E9] px-4 py-3 text-xs font-bold text-white transition hover:bg-blue-700">Batafsil</Link></div></article>}
