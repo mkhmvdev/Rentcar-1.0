@@ -1,12 +1,12 @@
 export default function Loading() {
   return (
-    <div className="container-shell py-16" aria-label="Sahifa yuklanmoqda">
-      <div className="h-12 w-48 animate-pulse rounded-lg bg-slate-200" />
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {[1,2,3,4].map((item) => (
-          <div key={item} className="h-72 animate-pulse rounded-2xl bg-slate-200" />
+    <main className="container-shell py-10" aria-busy="true" aria-label="Yuklanmoqda">
+      <div className="h-8 w-48 animate-pulse rounded bg-slate-200" />
+      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-slate-200" />
         ))}
       </div>
-    </div>
+    </main>
   );
 }

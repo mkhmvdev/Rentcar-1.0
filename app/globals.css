@@ -1,28 +1,19 @@
 @import "tailwindcss";
-:root { --blue:#3563e9; --orange:#ffa500; --ink:#1a202c; --muted:#90a3bf; --page:#f6f7f9; }
-*{box-sizing:border-box} html{scroll-behavior:smooth}
-body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font-jakarta),Arial,sans-serif}
-button,input,select{font:inherit} button,a{-webkit-tap-highlight-color:transparent}
-.container-shell{width:min(1280px,calc(100% - 40px));margin-inline:auto}
-.section{padding-block:70px}.card-shadow{box-shadow:0 8px 30px rgba(16,24,40,.06)}
-.tire-pattern{background-image:radial-gradient(circle at 12% 50%,transparent 0 44px,rgba(255,255,255,.08) 45px 47px,transparent 48px),radial-gradient(circle at 30% 50%,transparent 0 44px,rgba(255,255,255,.06) 45px 47px,transparent 48px);background-size:220px 160px}
-@media(max-width:640px){.container-shell{width:min(100% - 32px,1280px)}.section{padding-block:44px}}
 
-:root { --radius-card: 16px; --radius-button: 8px; --color-success: #059669; --color-warning: #d97706; --color-error: #dc2626; }
-.dark body { background: #0f172a; color: #e2e8f0; }
-.dark .bg-white { background: #1e293b !important; }
-.dark .text-slate-900, .dark .text-slate-800 { color: #f8fafc !important; }
-.dark .text-slate-500, .dark .text-slate-400 { color: #94a3b8 !important; }
-.dark .border-slate-100, .dark .border-slate-200 { border-color: #334155 !important; }
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #2f5bea;
+  --color-brand-dark: #2349c4;
+  --color-ink: #111827;
+  --color-page: #f5f6f8;
+}
 
-@keyframes spin-around {
-  0% { transform: translateZ(0) rotate(0); }
-  15%,35% { transform: translateZ(0) rotate(90deg); }
-  65%,85% { transform: translateZ(0) rotate(270deg); }
-  100% { transform: translateZ(0) rotate(360deg); }
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
 }
-@keyframes shimmer-slide {
-  to { transform: translate(calc(100cqw - 100%), 0); }
+
+.container-shell {
+  width: min(1200px, calc(100% - 32px));
+  margin-inline: auto;
 }
-.animate-spin-around { animation: spin-around calc(var(--speed) * 2) infinite linear; }
-.animate-shimmer-slide { animation: shimmer-slide var(--speed) ease-in-out infinite alternate; }

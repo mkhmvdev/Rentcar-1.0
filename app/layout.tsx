@@ -1,50 +1,48 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import Script from "next/script";
+import Link from "next/link";
+import { CarFront, Phone } from "lucide-react";
+import { site } from "@/lib/site";
 import "./globals.css";
-import { SiteEffects } from "@/components/SiteEffects";
-import { PageTransition } from "@/components/PageTransition";
+
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "MORENT | Avtomobil ijarasi",
-  description: "O'zbekiston bo'ylab qulay va ishonchli avtomobil ijarasi.",
-  metadataBase: new URL("https://morent.uz"),
-  manifest: "/manifest.webmanifest",
-  openGraph: {
-    title: "MORENT | Avtomobil ijarasi",
-    description: "Qulay, xavfsiz va arzon avtomobil ijara platformasi.",
-    url: "https://morent.uz",
-    siteName: "MORENT",
-    locale: "uz_UZ",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "MORENT | Avtomobil ijarasi",
-    description: "Avtomobil ijarasi uchun qulay platforma.",
-  },
+  title: { default: `${site.name} — avtomobil ijarasi`, template: `%s | ${site.name}` },
+  description: "Ijaraga mashina tanlang va bron qiling. Narx va shartlarni telefon orqali kelishamiz.",
+  metadataBase: new URL(site.url),
+  openGraph: { siteName: site.name, locale: "uz_UZ", type: "website" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  const gaId = process.env.NEXT_PUBLIC_GA_ID;
-  const yandexId = process.env.NEXT_PUBLIC_YANDEX_METRIC_ID;
   return (
-    <html
-      lang="uz"
-      className={`${jakarta.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        <PageTransition>{children}</PageTransition>
-        <SiteEffects />
-        <Script src="/register-sw.js" strategy="afterInteractive" />
-        {gaId && (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
-            <Script id="google-analytics" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}')`}</Script>
-          </>
-        )}
-        {yandexId && <Script id="yandex-metrica" strategy="afterInteractive">{`(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym('${yandexId}','init',{clickmap:true,trackLinks:true,accurateTrackBounce:true})`}</Script>}
+    <html lang="uz" className={`${jakarta.variable} antialiased`}>
+      <body className="flex min-h-dvh flex-col font-sans">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+          <div className="container-shell flex h-16 items-center justify-between gap-4">
+            <Link href="/" className="flex items-center gap-2 text-lg font-extrabold text-brand">
+              <CarFront size={26} aria-hidden />
+              {site.name}
+            </Link>
+            {site.phone && (
+              <a
+                href={`tel:${site.phone.replace(/\s/g, "")}`}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold hover:bg-slate-100"
+              >
+                <Phone size={16} aria-hidden />
+                <span className="hidden sm:inline">{site.phone}</span>
+                <span className="sm:hidden">Qo&apos;ng&apos;iroq</span>
+              </a>
+            )}
+          </div>
+        </header>
+        <div className="flex-1">{children}</div>
+        <footer className="mt-16 border-t border-slate-200 bg-white">
+          <div className="container-shell flex flex-col gap-2 py-8 text-sm text-slate-500 sm:flex-row sm:justify-between">
+            <p>© {new Date().getFullYear()} {site.name}</p>
+            <p>Narx va ijara shartlari telefon orqali kelishiladi.</p>
+          </div>
+        </footer>
       </body>
     </html>
   );
