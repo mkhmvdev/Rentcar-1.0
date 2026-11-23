@@ -1,12 +1,13 @@
 import ipaddress
 
 from django.db import transaction
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .serializers import BookingCreatedSerializer, BookingCreateSerializer
+from .models import Booking
+from .serializers import BookingCreatedSerializer, BookingCreateSerializer, BookingStatusSerializer
 from .telegram import notify_new_booking
 
 
@@ -31,3 +32,13 @@ class BookingCreateView(APIView):
             return str(ipaddress.ip_address(ident))
         except ValueError:
             return None
+
+
+class BookingStatusView(generics.RetrieveAPIView):
+    """Zayavka holati zayavka raqami bo'yicha (raqamni faqat zayavka egasi biladi). Shaxsiy ma'lumot qaytarilmaydi."""
+
+    serializer_class = BookingStatusSerializer
+    queryset = Booking.objects.select_related("car")
+    lookup_field = "reference"
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "booking_status"

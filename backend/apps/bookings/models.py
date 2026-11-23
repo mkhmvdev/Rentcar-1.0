@@ -1,6 +1,7 @@
 import secrets
 
 from django.db import models
+from django.utils import timezone
 
 from apps.cars.models import Car
 
@@ -40,8 +41,8 @@ class Booking(models.Model):
 
     class Meta:
         ordering = ("-created_at",)
-        verbose_name = "Bron"
-        verbose_name_plural = "Bronlar"
+        verbose_name = "Zayavka"
+        verbose_name_plural = "Zayavkalar"
         indexes = [models.Index(fields=("car", "status", "start_date", "end_date"))]
         constraints = [
             models.CheckConstraint(check=models.Q(end_date__gt=models.F("start_date")), name="booking_end_after_start"),
@@ -63,6 +64,30 @@ class Booking(models.Model):
 
     def can_change_to(self, new_status):
         return new_status in self.TRANSITIONS.get(self.status, set())
+
+    def capacity_conflict_day(self):
+        """Shu bron tasdiqlansa, mashinalar soni yetmay qoladigan birinchi kun (yoki None)."""
+        counts = self.car.booked_counts(self.start_date, self.end_date)
+        if self.pk and self.status == self.Status.CONFIRMED:
+            # O'zi allaqachon hisobga kirgan — chiqarib tashlaymiz.
+            return next((d for d, n in sorted(counts.items()) if n - 1 >= self.car.quantity), None)
+        return next((d for d, n in sorted(counts.items()) if n >= self.car.quantity), None)
+
+    def change_status(self, new_status):
+        """Holatni o'zgartiradi. (True, xabar) yoki (False, sabab) qaytaradi. Chaqiruvchi tranzaksiyada qulflashi kerak."""
+        if not self.can_change_to(new_status):
+            return False, f"Zayavka holati allaqachon: {self.get_status_display()}"
+        if new_status == self.Status.CONFIRMED:
+            day = self.capacity_conflict_day()
+            if day:
+                return False, f"{day:%d.%m.%Y} kuni bu mashinaning barcha nusxalari band. Avval boshqa bronni o'zgartiring."
+        self.status = new_status
+        self.save(update_fields=("status", "updated_at"))
+        return True, self.get_status_display()
+
+    @property
+    def is_overdue(self):
+        return self.status == self.Status.CONFIRMED and self.end_date < timezone.localdate()
 
     @property
     def formatted_phone(self):

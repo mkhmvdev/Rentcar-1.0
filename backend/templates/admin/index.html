@@ -1,0 +1,57 @@
+{% extends 'admin/base.html' %}
+{% load i18n unfold %}
+
+{% block title %}Bosh panel | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-8">
+    <div>
+        <h1 class="font-semibold text-font-important-light dark:text-font-important-dark" style="font-size:20px">Xush kelibsiz, {{ request.user.first_name|default:request.user.username }}</h1>
+        <p class="mt-1 text-sm">Bugungi holat: zayavkalar, ijaradagi va bo'sh mashinalar.</p>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {% for kpi in kpis %}
+            {% component "unfold/components/card.html" with href=kpi.href icon=kpi.icon %}
+                <p class="text-sm">{{ kpi.title }}</p>
+                <p class="mt-1 font-semibold text-font-important-light dark:text-font-important-dark" style="font-size:30px;line-height:36px">{{ kpi.value }}</p>
+                <p class="mt-1 text-xs">{{ kpi.hint }}</p>
+            {% endcomponent %}
+        {% endfor %}
+    </div>
+
+    <div class="grid gap-8 xl:grid-cols-2">
+        {% component "unfold/components/card.html" with title="Yangi zayavkalar — qo'ng'iroq qiling" %}
+            {% if new_table.rows %}
+                {% component "unfold/components/table.html" with table=new_table card_included=1 striped=1 %}{% endcomponent %}
+            {% else %}
+                <p class="text-sm">Yangi zayavka yo'q.</p>
+            {% endif %}
+        {% endcomponent %}
+
+        {% component "unfold/components/card.html" with title="Qaytarilishi kerak (bugun va kechikkan)" %}
+            {% if returning_table.rows %}
+                {% component "unfold/components/table.html" with table=returning_table card_included=1 striped=1 %}{% endcomponent %}
+            {% else %}
+                <p class="text-sm">Bugun qaytariladigan mashina yo'q.</p>
+            {% endif %}
+        {% endcomponent %}
+
+        {% component "unfold/components/card.html" with title="Yaqin 3 kunda olib ketiladi" %}
+            {% if starting_table.rows %}
+                {% component "unfold/components/table.html" with table=starting_table card_included=1 striped=1 %}{% endcomponent %}
+            {% else %}
+                <p class="text-sm">Yaqin kunlarda olib ketiladigan bron yo'q.</p>
+            {% endif %}
+        {% endcomponent %}
+
+        {% component "unfold/components/card.html" with title="Mashinalar: bugungi holat" %}
+            {% component "unfold/components/table.html" with table=fleet_table card_included=1 striped=1 %}{% endcomponent %}
+        {% endcomponent %}
+    </div>
+</div>
+{% endblock %}

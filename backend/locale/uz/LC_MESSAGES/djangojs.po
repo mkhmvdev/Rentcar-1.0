@@ -1,0 +1,61 @@
+# Rent Car admin panelining o'zbekcha tarjimasi (Django admin, auth va django-unfold matnlari).
+# O'zgartirgandan keyin: venv/bin/python compile_translations.py
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: uz\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgctxt "abbrev. month January"
+msgid "Jan"
+msgstr "Yan"
+
+msgctxt "abbrev. month February"
+msgid "Feb"
+msgstr "Fev"
+
+msgctxt "abbrev. month March"
+msgid "Mar"
+msgstr "Mar"
+
+msgctxt "abbrev. month April"
+msgid "Apr"
+msgstr "Apr"
+
+msgctxt "abbrev. month May"
+msgid "May"
+msgstr "May"
+
+msgctxt "abbrev. month June"
+msgid "Jun"
+msgstr "Iyun"
+
+msgctxt "abbrev. month July"
+msgid "Jul"
+msgstr "Iyul"
+
+msgctxt "abbrev. month August"
+msgid "Aug"
+msgstr "Avg"
+
+msgctxt "abbrev. month September"
+msgid "Sep"
+msgstr "Sen"
+
+msgctxt "abbrev. month October"
+msgid "Oct"
+msgstr "Okt"
+
+msgctxt "abbrev. month November"
+msgid "Nov"
+msgstr "Noy"
+
+msgctxt "abbrev. month December"
+msgid "Dec"
+msgstr "Dek"
+
+msgid "You have selected an action, but you haven’t saved your changes to individual fields yet. Please click OK to save. You’ll need to re-run the action."
+msgstr "Siz amal tanladingiz, lekin maydonlardagi o'zgarishlar hali saqlanmagan. Saqlash uchun OK ni bosing, keyin amalni qayta bajaring."
+
+msgid "You have selected an action, and you haven’t made any changes on individual fields. You’re probably looking for the Go button rather than the Save button."
+msgstr "Siz amal tanladingiz va maydonlarda o'zgarish yo'q. Ehtimol, sizga “Saqlash” emas, “Bajarish” tugmasi kerak."

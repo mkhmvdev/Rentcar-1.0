@@ -1,64 +1,57 @@
-import { CalendarCheck, PhoneCall, MousePointerClick } from "lucide-react";
-import { getCarOptions, getCars } from "@/lib/api";
+import Link from "next/link";
+import { ViewTransition } from "react";
+import { ArrowRight } from "lucide-react";
+import { getCars } from "@/lib/api";
 import { CarCard } from "@/components/CarCard";
-import { CarFilters } from "@/components/CarFilters";
 
-const pick = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
+const HOME_LIMIT = 6;
 
-export default async function HomePage({ searchParams }: PageProps<"/">) {
-  const params = await searchParams;
-  const filters = { type: pick(params.type), transmission: pick(params.transmission), sort: pick(params.sort) };
-  const [cars, options] = await Promise.all([getCars(filters), getCarOptions()]);
-  // Bo'sh mashinalar oldinda, ijaradagilar oxirida (tartib o'z ichida saqlanadi).
-  const sorted = [...cars].sort((a, b) => Number(Boolean(a.rented_until)) - Number(Boolean(b.rented_until)));
+export default async function HomePage() {
+  const cars = await getCars();
+  // Bugun bo'sh mashinalar oldinda.
+  const featured = [...cars].sort((a, b) => Number(a.available_count === 0) - Number(b.available_count === 0)).slice(0, HOME_LIMIT);
+  const freeUnits = cars.reduce((sum, car) => sum + car.available_count, 0);
 
   return (
-    <main>
-      <section className="bg-brand text-white">
-        <div className="container-shell py-12 sm:py-16">
-          <h1 className="max-w-2xl text-3xl font-extrabold leading-tight sm:text-5xl">Ijaraga mashina — tez va oson</h1>
-          <p className="mt-4 max-w-xl text-white/85 sm:text-lg">
-            Mashinani tanlang, sanani belgilang va zayavka qoldiring. Biz qo&apos;ng&apos;iroq qilib, narx va shartlarni kelishamiz.
-          </p>
-          <ol className="mt-8 grid gap-3 text-sm sm:grid-cols-3">
-            {[
-              [MousePointerClick, "Mashina tanlang"],
-              [CalendarCheck, "Sana va raqamingizni qoldiring"],
-              [PhoneCall, "Qo'ng'iroqni kuting"],
-            ].map(([Icon, text], index) => {
-              const I = Icon as typeof PhoneCall;
-              return (
-                <li key={index} className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3">
-                  <I size={20} aria-hidden />
-                  <span><b>{index + 1}.</b> {text as string}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-      </section>
-
-      <section id="mashinalar" className="container-shell scroll-mt-20 py-10">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <ViewTransition
+      enter={{ "nav-back": "nav-back", default: "none" }}
+      exit={{ "nav-forward": "nav-forward", default: "none" }}
+      default="none"
+    >
+      <main className="container-shell py-8 sm:py-10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-extrabold sm:text-3xl">Mashinalar</h2>
-            <p className="mt-1 text-sm text-slate-500">{cars.length} ta mashina topildi</p>
+            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+              Ijaraga <span className="text-brand">mashinalar</span>
+            </h1>
+            <p className="mt-2 text-muted">Mashinani tanlang, sanani belgilang — narx va shartlarni telefonda kelishamiz.</p>
           </div>
-          <div className="lg:w-[640px]">
-            <CarFilters current={filters} carTypes={options.car_types} transmissions={options.transmissions} />
-          </div>
+          <p className="flex items-center gap-2 text-sm text-muted">
+            <span className="size-2 rounded-full bg-ok" aria-hidden />
+            Bugun <b className="text-ink">{freeUnits}</b> ta mashina bo&apos;sh
+          </p>
         </div>
 
-        {sorted.length > 0 ? (
+        {featured.length > 0 ? (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {sorted.map((car) => <CarCard key={car.id} car={car} />)}
+            {featured.map((car, index) => <CarCard key={car.id} car={car} index={index} />)}
           </div>
         ) : (
-          <p className="mt-10 rounded-2xl bg-white p-8 text-center text-slate-500 ring-1 ring-slate-200">
-            Bu filtrlar bo&apos;yicha mashina topilmadi.
-          </p>
+          <p className="mt-8 rounded-xl border border-dashed border-line bg-surface p-12 text-center text-muted">Hozircha mashinalar qo&apos;shilmagan.</p>
         )}
-      </section>
-    </main>
+
+        {cars.length > 0 && (
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/mashinalar"
+              className="group inline-flex h-12 items-center gap-2 rounded-lg border border-brand px-6 font-bold text-brand transition hover:bg-brand hover:text-on-brand"
+            >
+              Barcha mashinalar ({cars.length})
+              <ArrowRight size={18} className="transition group-hover:translate-x-0.5" aria-hidden />
+            </Link>
+          </div>
+        )}
+      </main>
+    </ViewTransition>
   );
 }

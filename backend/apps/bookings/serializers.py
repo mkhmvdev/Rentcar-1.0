@@ -70,6 +70,11 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             errors["end_date"] = f"Saytdan ko'pi bilan {MAX_RENTAL_DAYS} kunga bron qilinadi. Uzoqroq muddat uchun qo'ng'iroq qiling."
         if errors:
             raise serializers.ValidationError(errors)
+        full_days = attrs["car"].fully_booked_days(start, end)
+        if full_days:
+            raise serializers.ValidationError({
+                "start_date": f"Bu mashina {full_days[0]:%d.%m} kuni band (barcha nusxalari ijarada). Boshqa sanani tanlang."
+            })
         return attrs
 
 
@@ -79,3 +84,14 @@ class BookingCreatedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ("reference", "car_name", "customer_name", "start_date", "end_date", "status")
+
+
+class BookingStatusSerializer(serializers.ModelSerializer):
+    """Mijozga zayavka holatini ko'rsatish uchun: shaxsiy ma'lumotlarsiz."""
+
+    car_id = serializers.IntegerField(source="car.id")
+    car_name = serializers.CharField(source="car.name")
+
+    class Meta:
+        model = Booking
+        fields = ("reference", "car_id", "car_name", "start_date", "end_date", "status", "updated_at")

@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Info } from "lucide-react";
+import { ViewTransition } from "react";
+import { ArrowLeft, CalendarDays, CarFront, Cog, Fuel, Palette, Users } from "lucide-react";
 import { getCar } from "@/lib/api";
-import { addDays, formatDate, formatPrice, todayInTashkent } from "@/lib/format";
+import { addDays, formatPrice, todayInTashkent } from "@/lib/format";
+import { telegramLink } from "@/lib/site";
+import { Availability } from "@/components/Availability";
 import { BookingForm } from "@/components/BookingForm";
 import { CarGallery } from "@/components/CarGallery";
+import { Plate } from "@/components/Plate";
 
 async function loadCar(id: string) {
   const numericId = Number(id);
@@ -27,71 +31,101 @@ export async function generateMetadata({ params }: PageProps<"/cars/[id]">): Pro
 export default async function CarPage({ params }: PageProps<"/cars/[id]">) {
   const car = await loadCar((await params).id);
   const today = todayInTashkent();
-  // Ijaradagi mashinaga faqat qaytarilgandan keyingi sanalar uchun zayavka qoldiriladi.
-  const minStartDate = car.rented_until && car.rented_until >= today ? addDays(car.rented_until, 1) : today;
   const images = [car.image, ...car.images].filter((src): src is string => Boolean(src));
+  const telegramHref = telegramLink(
+    `Assalomu alaykum! ${car.name} (${car.year}${car.plate_number ? `, ${car.plate_number}` : ""}) mashinasini ijaraga olmoqchiman.`,
+  );
 
-  const specs: [string, string][] = [
-    ["Turi", car.car_type_label],
-    ["Yili", String(car.year)],
-    ["Uzatmalar qutisi", car.transmission_label],
-    ["Yoqilg'i", car.fuel_type_label],
-    ["O'rindiqlar", `${car.seats} ta`],
-    ...(car.color ? ([["Rangi", car.color]] as [string, string][]) : []),
-  ];
+  const specs = [
+    [CarFront, "Turi", car.car_type_label],
+    [CalendarDays, "Yili", String(car.year)],
+    [Cog, "Uzatmalar qutisi", car.transmission_label],
+    [Fuel, "Yoqilg'i", car.fuel_type_label],
+    [Users, "O'rindiqlar", `${car.seats} ta`],
+    ...(car.color ? [[Palette, "Rangi", car.color]] : []),
+  ] as [typeof Cog, string, string][];
 
   return (
-    <main className="container-shell py-6 sm:py-10">
-      <Link href="/#mashinalar" className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-brand">
-        <ChevronLeft size={16} aria-hidden /> Barcha mashinalar
-      </Link>
+    <ViewTransition
+      enter={{ "nav-forward": "nav-forward", default: "none" }}
+      exit={{ "nav-back": "nav-back", default: "none" }}
+      default="none"
+    >
+      <main className="container-shell py-6 sm:py-8">
+        <Link
+          href="/mashinalar"
+          transitionTypes={["nav-back"]}
+          className="group inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-ink"
+        >
+          <ArrowLeft size={16} className="transition group-hover:-translate-x-0.5" aria-hidden /> Barcha mashinalar
+        </Link>
 
-      <div className="mt-4 grid items-start gap-8 lg:grid-cols-[1fr_400px]">
-        <section className={car.rented_until ? "opacity-70 grayscale" : ""}>
-          <CarGallery name={car.name} images={images} />
-        </section>
+        <div className="mt-5 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="grid gap-8">
+            <CarGallery
+              carId={car.id}
+              name={car.name}
+              images={images}
+              overlay={
+                car.plate_number ? (
+                  <div className="absolute bottom-4 left-4">
+                    <ViewTransition name={`car-plate-${car.id}`} share="morph" default="none">
+                      <span className="inline-block"><Plate number={car.plate_number} size="md" /></span>
+                    </ViewTransition>
+                  </div>
+                ) : null
+              }
+            />
 
-        <aside className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6 lg:sticky lg:top-24 lg:row-span-2">
-          <h1 className="text-2xl font-extrabold sm:text-3xl">{car.name}</h1>
-          <p className="mt-1 text-slate-500">{car.brand} · {car.year}</p>
-          <p className="mt-4 text-3xl font-extrabold text-brand">
-            {formatPrice(car.price_per_day)}
-            <span className="text-base font-medium text-slate-500"> / 1 kun</span>
-          </p>
-          <p className="mt-1 text-xs text-slate-500">Yakuniy narx muddat va shartlarga qarab telefonda kelishiladi.</p>
-
-          {car.rented_until && (
-            <p className="mt-4 flex gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
-              <Info size={18} className="shrink-0" aria-hidden />
-              <span>
-                Bu mashina hozir ijarada, <b>{formatDate(car.rented_until)}</b>gacha band. Keyingi sanalar uchun zayavka qoldirishingiz mumkin.
-              </span>
-            </p>
-          )}
-
-          <div className="mt-6 border-t border-slate-100 pt-6">
-            <BookingForm carId={car.id} minStartDate={minStartDate} />
-          </div>
-        </aside>
-
-        <section>
-          <h2 className="text-xl font-extrabold">Xususiyatlari</h2>
-          <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {specs.map(([label, value]) => (
-              <div key={label} className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
-                <dt className="text-xs text-slate-500">{label}</dt>
-                <dd className="mt-1 font-bold">{value}</dd>
+            <section>
+              <p className="text-sm font-semibold text-brand">{car.brand}</p>
+              <ViewTransition name={`car-title-${car.id}`} share="morph" default="none">
+                <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">{car.name}</h1>
+              </ViewTransition>
+              <div className="mt-4">
+                <Availability count={car.available_count} nextFree={car.next_free_date} size="md" />
               </div>
-            ))}
-          </dl>
-          {car.description && (
-            <>
-              <h2 className="mt-8 text-xl font-extrabold">Tavsif</h2>
-              <p className="mt-3 whitespace-pre-line leading-relaxed text-slate-700">{car.description}</p>
-            </>
-          )}
-        </section>
-      </div>
-    </main>
+
+              <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
+                {specs.map(([Icon, label, value]) => (
+                  <div key={label} className="bg-surface p-4">
+                    <dt className="flex items-center gap-2 text-xs font-medium text-muted">
+                      <Icon size={15} aria-hidden /> {label}
+                    </dt>
+                    <dd className="mt-1.5 font-bold text-ink">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              {car.description && (
+                <div className="mt-8">
+                  <h2 className="text-lg font-bold">Tavsif</h2>
+                  <p className="mt-2 max-w-2xl whitespace-pre-line leading-relaxed text-ink/80">{car.description}</p>
+                </div>
+              )}
+            </section>
+          </div>
+
+          <aside className="rounded-xl border border-line bg-surface p-5 sm:p-6 lg:sticky lg:top-20">
+            <div className="flex items-end justify-between gap-4 border-b border-line pb-5">
+              <div>
+                <p className="text-sm text-muted">1 kunlik narx</p>
+                <p className="mt-0.5 whitespace-nowrap text-3xl font-extrabold text-ink">{formatPrice(car.price_per_day)}</p>
+              </div>
+              <p className="max-w-[10rem] text-right text-xs leading-snug text-muted">Yakuniy narx muddatga qarab telefonda kelishiladi</p>
+            </div>
+            <div className="pt-5">
+              <BookingForm
+                carId={car.id}
+                busy={car.busy_ranges}
+                minDate={today}
+                maxDate={addDays(today, 365)}
+                telegramHref={telegramHref}
+              />
+            </div>
+          </aside>
+        </div>
+      </main>
+    </ViewTransition>
   );
 }

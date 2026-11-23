@@ -10,6 +10,9 @@ import re
 import requests
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
+
+from apps.cars.models import Car
 
 from .models import Booking
 
@@ -53,10 +56,18 @@ def format_money(amount):
     return f"{amount:,}".replace(",", " ") + " so'm"
 
 
+STATUS_FOOTERS = {
+    Booking.Status.CONFIRMED: "✅ Bron qilindi",
+    Booking.Status.REJECTED: "❌ Rad etildi",
+    Booking.Status.RETURNED: "↩️ Mashina qaytarildi",
+}
+
+
 def booking_text(booking):
     icon = STATUS_ICONS.get(booking.status, "")
     lines = [
-        f"{icon} Zayavka {booking.reference} — {booking.get_status_display()}",
+        f"{icon} {booking.get_status_display()}",
+        f"🔖 Zayavka raqami: {booking.reference}",
         "",
         f"🚗 {booking.car.name} ({booking.car.year})",
         f"👤 {booking.customer_name}",
@@ -64,6 +75,10 @@ def booking_text(booking):
         f"📅 {booking.start_date:%d.%m.%Y} — {booking.end_date:%d.%m.%Y} ({booking.days} kun)",
         f"💰 Saytdagi narx: {format_money(booking.car.price_per_day)} / kun",
     ]
+    footer = STATUS_FOOTERS.get(booking.status)
+    if footer and booking.updated_at:
+        changed_at = timezone.localtime(booking.updated_at)
+        lines += ["", f"{footer}: {changed_at:%d.%m.%Y %H:%M}", f"🔖 {booking.reference}"]
     return "\n".join(lines)
 
 
@@ -97,7 +112,12 @@ def notify_new_booking(booking_id):
 
 
 def answer_callback(callback_id, text, show_alert=False):
-    call_api("answerCallbackQuery", {"callback_query_id": callback_id, "text": text, "show_alert": show_alert})
+    """Tugma ustida qisqa javob ko'rsatadi. Bu faqat bezak: Telegram ~15 daqiqadan eski bosishga javob
+    qabul qilmaydi, shuning uchun xato bo'lsa logga yozamiz va asosiy ishni (holatni o'zgartirish) to'xtatmaymiz."""
+    try:
+        call_api("answerCallbackQuery", {"callback_query_id": callback_id, "text": text, "show_alert": show_alert})
+    except TelegramError:
+        logger.warning("Tugma bosilishiga javob berib bo'lmadi (eskirgan bo'lishi mumkin)", exc_info=True)
 
 
 def update_message(callback_query, booking):
@@ -132,20 +152,27 @@ def handle_callback(callback_query):
         if booking is None:
             answer_callback(callback_id, "Zayavka topilmadi.", show_alert=True)
             return
-        changed = booking.can_change_to(new_status)
-        if changed:
-            booking.status = new_status
-            booking.save(update_fields=("status", "updated_at"))
+        # Bir vaqtda ikki bron tasdiqlanib, mashinalar sonidan oshib ketmasligi uchun mashinani ham qulflaymiz.
+        Car.objects.select_for_update().get(pk=booking.car_id)
+        changed, message = booking.change_status(new_status)
 
     if changed:
-        answer_callback(callback_id, f"{STATUS_ICONS[new_status]} {booking.get_status_display()}")
+        answer_callback(callback_id, f"{STATUS_ICONS[new_status]} {message}")
     else:
-        answer_callback(callback_id, f"Zayavka holati allaqachon: {booking.get_status_display()}", show_alert=True)
+        answer_callback(callback_id, message, show_alert=True)
     # Xabarni har doim joriy holatga moslaymiz (masalan, admin panelda o'zgartirilgan bo'lsa).
     try:
         update_message(callback_query, booking)
     except TelegramError:
         logger.exception("Zayavka %s xabarini yangilab bo'lmadi", booking.reference)
+
+
+def prepare_polling():
+    """Tokenni tekshiradi va webhook o'rnatilgan bo'lsa o'chiradi (aks holda getUpdates ishlamaydi).
+    Navbatdagi tugma bosishlari saqlanib qoladi. Bot nomini qaytaradi."""
+    me = call_api("getMe", {})
+    call_api("deleteWebhook", {"drop_pending_updates": False})
+    return me.get("username", "")
 
 
 def get_updates(offset, timeout=30):
